@@ -2,34 +2,6 @@
 
 Sistema de gestión completo para proveedores de TV e Internet (ISP) construido con React, TypeScript, Tailwind CSS y Supabase.
 
----
-
-## 🚀 Inicio Rápido
-
-### 1. Configurar Base de Datos
-
-1. Ve a [Supabase Dashboard](https://supabase.com/dashboard) y abre tu proyecto
-2. Ve a **SQL Editor** → **New Query**
-3. Copia y pega el contenido del archivo `database-schema.sql`
-4. Haz clic en **Run**
-
-### 2. La App Ya Está Conectada
-
-✅ El código ya está actualizado para conectarse directamente con Supabase
-✅ No necesitas desplegar Edge Functions
-✅ Funciona inmediatamente con las credenciales de Supabase en Figma Make
-
-### 3. Probar
-
-1. Abre la aplicación
-2. Ve a **Planes** → **Agregar Plan** y crea un plan de prueba
-3. Ve a **Supabase Dashboard** → **Table Editor** → **plans**
-4. Deberías ver el plan que acabas de crear
-
-¡Eso es todo! 🎉
-
----
-
 ## 📚 Documentación
 
 ### 📄 Archivos de Guías
