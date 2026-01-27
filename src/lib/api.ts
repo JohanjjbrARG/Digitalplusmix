@@ -38,18 +38,21 @@ async function logAudit(action: 'create' | 'update' | 'delete', table: string, i
   const { user } = authService.getUser();
   const auditData = {
     action,
-    table,
-    record_id: id,
-    record_name: name,
+    entity_type: table,
+    entity_id: id,
+    entity_name: name,
     user_id: user?.id,
     user_email: user?.email,
   };
 
   const { error } = await supabase
-    .from('audits')
+    .from('audit_logs')
     .insert([auditData]);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error logging audit:', error);
+    // No lanzar error para no interrumpir la operación principal
+  }
 }
 
 // ==================== CLIENT API ====================
@@ -96,6 +99,7 @@ export const clientsAPI = {
       latitude: client.latitude,
       longitude: client.longitude,
       next_billing_date: client.nextBillingDate,
+      document_number: client.documentNumber,
     };
 
     const { data, error } = await supabase
@@ -128,6 +132,7 @@ export const clientsAPI = {
     if (client.monthlyFee !== undefined) clientData.monthly_fee = client.monthlyFee;
     if (client.latitude !== undefined) clientData.latitude = client.latitude;
     if (client.longitude !== undefined) clientData.longitude = client.longitude;
+    if (client.documentNumber !== undefined) clientData.document_number = client.documentNumber;
 
     const { data, error } = await supabase
       .from('clients')

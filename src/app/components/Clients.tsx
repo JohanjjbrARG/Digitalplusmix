@@ -47,6 +47,7 @@ export interface Client {
   connectionStatus: 'online' | 'offline';
   monthlyFee: number;
   joinDate: string;
+  documentNumber?: string;
 }
 
 export function Clients() {
@@ -88,7 +89,8 @@ export function Clients() {
     const matchesSearch =
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.ipAddress.includes(searchTerm) ||
-      client.poleNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      client.poleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.documentNumber && client.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesNeighborhood =
       neighborhoodFilter === 'all' || client.neighborhood === neighborhoodFilter;
@@ -173,7 +175,7 @@ export function Clients() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Buscar por nombre, IP o poste..."
+                placeholder="Buscar por nombre, IP, poste o documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -219,6 +221,7 @@ export function Clients() {
           <TableHeader>
             <TableRow className="bg-blue-50">
               <TableHead className="font-semibold text-gray-900">Nombre del Cliente</TableHead>
+              <TableHead className="font-semibold text-gray-900">Documento</TableHead>
               <TableHead className="font-semibold text-gray-900">Dirección IP</TableHead>
               <TableHead className="font-semibold text-gray-900">Nro Poste</TableHead>
               <TableHead className="font-semibold text-gray-900">Barrio</TableHead>
@@ -230,7 +233,7 @@ export function Clients() {
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   No se encontraron clientes
                 </TableCell>
               </TableRow>
@@ -242,6 +245,7 @@ export function Clients() {
                   onClick={() => navigate(`/clients/${client.id}`)}
                 >
                   <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell className="text-sm">{client.documentNumber || '-'}</TableCell>
                   <TableCell className="font-mono text-sm">{client.ipAddress}</TableCell>
                   <TableCell>{client.poleNumber}</TableCell>
                   <TableCell>{client.neighborhood}</TableCell>

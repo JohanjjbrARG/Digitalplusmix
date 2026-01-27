@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Filter, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ticketsAPI } from '@/lib/api-tickets-zones';
@@ -26,6 +26,7 @@ import { TicketFormDialog } from '@/app/components/TicketFormDialog';
 
 export function Tickets() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -35,7 +36,13 @@ export function Tickets() {
 
   useEffect(() => {
     loadTickets();
-  }, []);
+    
+    // Si hay un parámetro de cliente en la URL, establecer el filtro de búsqueda
+    const clientParam = searchParams.get('client');
+    if (clientParam) {
+      setSearchQuery(clientParam);
+    }
+  }, [searchParams]);
 
   const loadTickets = async () => {
     try {

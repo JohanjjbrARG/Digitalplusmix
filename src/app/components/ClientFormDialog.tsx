@@ -19,6 +19,7 @@ export interface ClientFormData {
   connectionStatus: 'online' | 'offline';
   latitude?: number;
   longitude?: number;
+  documentNumber?: string;
 }
 
 interface ClientFormDialogProps {
@@ -50,6 +51,7 @@ export function ClientFormDialog({
     monthlyFee: 0,
     status: 'active',
     connectionStatus: 'online',
+    documentNumber: '',
     ...initialData,
   });
 
@@ -67,6 +69,7 @@ export function ClientFormDialog({
         monthlyFee: 0,
         status: 'active',
         connectionStatus: 'online',
+        documentNumber: '',
         ...initialData,
       });
     }
@@ -122,6 +125,16 @@ export function ClientFormDialog({
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="documentNumber">Número de Documento</Label>
+              <Input
+                id="documentNumber"
+                value={formData.documentNumber || ''}
+                onChange={(e) => setFormData({ ...formData, documentNumber: e.target.value })}
+                placeholder="DNI, Cédula, Pasaporte, etc."
               />
             </div>
 

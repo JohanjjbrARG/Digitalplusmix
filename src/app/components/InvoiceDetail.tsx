@@ -178,7 +178,8 @@ export function InvoiceDetail() {
             <Printer className="w-4 h-4 mr-2" />
             Imprimir
           </Button>
-          {invoice.status !== 'paid' && balance > 0 && (
+          {/* Permitir registrar pagos para facturas pendientes, vencidas o parcialmente pagadas */}
+          {(invoice.status === 'pending' || invoice.status === 'overdue' || (invoice.status === 'paid' && balance > 0)) && balance > 0 && (
             <Button
               onClick={() => {
                 setPaymentAmount(balance.toFixed(2));

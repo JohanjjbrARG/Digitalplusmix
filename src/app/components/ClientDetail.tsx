@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, Edit, RefreshCw, AlertCircle, FileText, Printer, Plus } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Edit, RefreshCw, AlertCircle, FileText, Printer, Plus, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { clientsAPI, invoicesAPI, plansAPI } from '@/lib/api';
 import { invoicesExtendedAPI } from '@/lib/api-extended';
@@ -34,6 +34,7 @@ interface Client {
   connectionStatus: 'online' | 'offline';
   monthlyFee: number;
   joinDate: string;
+  documentNumber?: string;
 }
 
 interface Invoice {
@@ -142,8 +143,8 @@ export function ClientDetail() {
   };
 
   const handlePrintInvoice = (invoiceId: string) => {
-    // Abrir la página de detalle de factura en una nueva ventana para imprimir
-    window.open(`/billing/${invoiceId}?print=true`, '_blank');
+    // Navegar a la página de detalle de factura
+    navigate(`/billing/${invoiceId}`);
   };
 
   const handlePrintMonthlyStatement = () => {
@@ -338,6 +339,11 @@ export function ClientDetail() {
     printWindow.document.close();
   };
 
+  const handleViewTechnicalHistory = () => {
+    // Navegar a la página de tickets del cliente
+    navigate(`/tickets?client=${client?.name}`);
+  };
+
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -436,6 +442,15 @@ export function ClientDetail() {
                 <p className="font-medium">{client.phone}</p>
               </div>
             </div>
+            {client.documentNumber && (
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-600">Documento</p>
+                  <p className="font-medium">{client.documentNumber}</p>
+                </div>
+              </div>
+            )}
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-blue-600 mt-0.5" />
               <div>
@@ -517,7 +532,8 @@ export function ClientDetail() {
             <Button variant="outline" className="w-full">
               Llamar Cliente
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={handleViewTechnicalHistory}>
+              <History className="w-4 h-4 mr-2" />
               Ver Historial Técnico
             </Button>
             <Button

@@ -26,7 +26,7 @@ const createCustomIcon = (color: string) => {
 
 const activeIcon = createCustomIcon('#10b981'); // green
 const delinquentIcon = createCustomIcon('#ef4444'); // red
-const suspendedIcon = createCustomIcon('#f59e0b'); // orange
+const suspendedIcon = createCustomIcon('#f59e0b'); // orange 
 
 interface Client {
   id: string;
@@ -66,8 +66,11 @@ export function NetworkMap() {
   const [loading, setLoading] = useState(true);
   const [showZones, setShowZones] = useState(true);
   const [mapCenter, setMapCenter] = useState<[number, number]>([-12.046374, -77.042793]); // Lima, Peru
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // Asegurarse de que el componente esté montado antes de renderizar el mapa
+    setIsMounted(true);
     loadData();
   }, []);
 
@@ -224,101 +227,109 @@ export function NetworkMap() {
         </CardHeader>
         <CardContent>
           <div className="rounded-lg overflow-hidden border border-gray-200" style={{ height: '600px' }}>
-            <MapContainer
-              center={mapCenter}
-              zoom={13}
-              style={{ height: '100%', width: '100%' }}
-              scrollWheelZoom={true}
-            >
-              <MapCenterUpdater center={mapCenter} />
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+            {!isMounted ? (
+              <div className="flex h-full items-center justify-center bg-gray-100 text-gray-500">
+                <div className="text-center">
+                  <div className="text-gray-600">Cargando mapa...</div>
+                </div>
+              </div>
+            ) : clients.length === 0 ? (
+              <div className="flex h-full items-center justify-center bg-gray-100 text-gray-500">
+                <div className="text-center">
+                  <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>No hay clientes con coordenadas GPS registradas</p>
+                  <p className="text-sm mt-2">
+                    Agrega coordenadas a los clientes para verlos en el mapa
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <MapContainer 
+                center={mapCenter}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
+              >
+                <MapCenterUpdater center={mapCenter} />
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
 
-              {/* Zonas */}
-              {showZones &&
-                zones.map((zone) => {
-                  if (!zone.centerLatitude || !zone.centerLongitude) return null;
-                  return (
-                    <Circle
-                      key={zone.id}
-                      center={[zone.centerLatitude, zone.centerLongitude]}
-                      radius={1000}
-                      pathOptions={{
-                        color: zone.color,
-                        fillColor: zone.color,
-                        fillOpacity: 0.1,
-                        weight: 2,
-                      }}
-                    >
-                      <Popup>
-                        <div className="p-2">
-                          <h3 className="font-semibold text-lg">{zone.name}</h3>
-                          {zone.description && (
-                            <p className="text-sm text-gray-600 mt-1">{zone.description}</p>
-                          )}
-                        </div>
-                      </Popup>
-                    </Circle>
-                  );
-                })}
+                {/* Zonas */}
+                {showZones &&
+                  zones.map((zone) => {
+                    if (!zone.centerLatitude || !zone.centerLongitude) return null;
+                    return (
+                      <Circle
+                        key={zone.id}
+                        center={[zone.centerLatitude, zone.centerLongitude]}
+                        radius={1000}
+                        pathOptions={{
+                          color: zone.color,
+                          fillColor: zone.color,
+                          fillOpacity: 0.1,
+                          weight: 2,
+                        }}
+                      >
+                        <Popup>
+                          <div className="p-2">
+                            <h3 className="font-semibold text-lg">{zone.name}</h3>
+                            {zone.description && (
+                              <p className="text-sm text-gray-600 mt-1">{zone.description}</p>
+                            )}
+                          </div>
+                        </Popup>
+                      </Circle>
+                    );
+                  })}
 
-              {/* Clientes */}
-              {clients.map((client) => (
-                <Marker
-                  key={client.id}
-                  position={[client.latitude, client.longitude]}
-                  icon={getClientIcon(client.status)}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[200px]">
-                      <h3 className="font-semibold text-lg mb-2">{client.name}</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Estado:</span>
-                          {getStatusBadge(client.status)}
+                {/* Clientes */}
+                {clients.map((client) => (
+                  <Marker
+                    key={client.id}
+                    position={[client.latitude, client.longitude]}
+                    icon={getClientIcon(client.status)}
+                  >
+                    <Popup>
+                      <div className="p-2 min-w-[200px]">
+                        <h3 className="font-semibold text-lg mb-2">{client.name}</h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">Estado:</span>
+                            {getStatusBadge(client.status)}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">Conexión:</span>
+                            {getConnectionBadge(client.connectionStatus)}
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Plan:</span>
+                            <p className="font-medium">{client.planName}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">IP:</span>
+                            <p className="font-mono text-xs">{client.ipAddress}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Barrio:</span>
+                            <p className="font-medium">{client.neighborhood}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => window.open(`/clients/${client.id}`, '_blank')}
+                          >
+                            Ver Detalles
+                          </Button>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Conexión:</span>
-                          {getConnectionBadge(client.connectionStatus)}
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Plan:</span>
-                          <p className="font-medium">{client.planName}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">IP:</span>
-                          <p className="font-mono text-xs">{client.ipAddress}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Barrio:</span>
-                          <p className="font-medium">{client.neighborhood}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
-                          onClick={() => window.open(`/clients/${client.id}`, '_blank')}
-                        >
-                          Ver Detalles
-                        </Button>
                       </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            )}
           </div>
-          
-          {clients.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
-              <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p>No hay clientes con coordenadas GPS registradas</p>
-              <p className="text-sm mt-2">
-                Agrega coordenadas a los clientes para verlos en el mapa
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

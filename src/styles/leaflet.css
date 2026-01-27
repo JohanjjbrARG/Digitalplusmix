@@ -1,9 +1,10 @@
 /* Leaflet CSS - Requerido para react-leaflet */
-@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+@import 'leaflet/dist/leaflet.css';
 
 /* Ajustes personalizados para el mapa */
 .leaflet-container {
   font-family: inherit;
+  z-index: 0;
 }
 
 .leaflet-popup-content-wrapper {
