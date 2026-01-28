@@ -35,7 +35,7 @@ function toSnakeCase(obj: any): any {
 
 // Function to log audit
 async function logAudit(action: 'create' | 'update' | 'delete', table: string, id: string, name: string) {
-  const { user } = authService.getUser();
+  const user = authService.getCurrentUser();
   const auditData = {
     action,
     entity_type: table,
@@ -61,12 +61,25 @@ export const clientsAPI = {
   async getAll() {
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select(`
+        *,
+        zones:zone_id (
+          id,
+          name
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return { clients: toCamelCase(data) };
+    // Mapear los datos para incluir zoneName
+    const clientsWithZoneName = data?.map((client: any) => ({
+      ...client,
+      zoneName: client.zones?.name,
+      zones: undefined, // Eliminar el objeto zones anidado
+    }));
+
+    return { clients: toCamelCase(clientsWithZoneName) };
   },
 
   async getOne(id: string) {
@@ -100,6 +113,7 @@ export const clientsAPI = {
       longitude: client.longitude,
       next_billing_date: client.nextBillingDate,
       document_number: client.documentNumber,
+      zone_id: client.zoneId,
     };
 
     const { data, error } = await supabase
@@ -133,6 +147,7 @@ export const clientsAPI = {
     if (client.latitude !== undefined) clientData.latitude = client.latitude;
     if (client.longitude !== undefined) clientData.longitude = client.longitude;
     if (client.documentNumber !== undefined) clientData.document_number = client.documentNumber;
+    if (client.zoneId !== undefined) clientData.zone_id = client.zoneId;
 
     const { data, error } = await supabase
       .from('clients')

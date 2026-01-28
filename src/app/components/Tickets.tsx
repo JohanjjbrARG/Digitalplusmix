@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Plus, Filter, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ticketsAPI } from '@/lib/api-tickets-zones';

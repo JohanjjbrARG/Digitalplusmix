@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { DollarSign, TrendingUp, Clock, Plus, RefreshCw, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { invoicesAPI, clientsAPI } from '@/lib/api';

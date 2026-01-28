@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Mail, Phone, MapPin, Edit, RefreshCw, AlertCircle, FileText, Printer, Plus, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { clientsAPI, invoicesAPI, plansAPI } from '@/lib/api';
@@ -35,6 +35,8 @@ interface Client {
   monthlyFee: number;
   joinDate: string;
   documentNumber?: string;
+  zoneId?: string;
+  zoneName?: string;
 }
 
 interface Invoice {
@@ -495,6 +497,12 @@ export function ClientDetail() {
               <p className="text-sm text-gray-600">Barrio</p>
               <p className="font-medium">{client.neighborhood}</p>
             </div>
+            {client.zoneName && (
+              <div>
+                <p className="text-sm text-gray-600">Zona</p>
+                <Badge variant="outline" className="mt-1">{client.zoneName}</Badge>
+              </div>
+            )}
             <div className="pt-2 space-y-2">
               <Button
                 variant="outline"

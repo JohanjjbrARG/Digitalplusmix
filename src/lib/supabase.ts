@@ -105,8 +105,10 @@ export interface Client {
   zone_id?: string;
   last_payment_date?: string;
   next_billing_date?: string;
+  documentNumber?: string;  // En SQL es document_number
   created_at: string;
   updated_at: string;
+  
 }
 
 export interface Plan {

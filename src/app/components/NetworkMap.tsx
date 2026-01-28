@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import { GoogleMap, useLoadScript, Marker, InfoWindow, Circle } from '@react-google-maps/api';
 import { MapPin, Activity, AlertTriangle, Navigation, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -9,24 +8,9 @@ import { Badge } from '@/app/components/ui/badge';
 import { clientsAPI } from '@/lib/api';
 import { zonesAPI } from '@/lib/api-tickets-zones';
 
-// Configurar iconos personalizados de Leaflet
-const createCustomIcon = (color: string) => {
-  return new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}" stroke="white" stroke-width="2">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-        <circle cx="12" cy="10" r="3" fill="white" stroke="${color}"/>
-      </svg>
-    `)}`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  });
-};
-
-const activeIcon = createCustomIcon('#10b981'); // green
-const delinquentIcon = createCustomIcon('#ef4444'); // red
-const suspendedIcon = createCustomIcon('#f59e0b'); // orange 
+// ⚠️ IMPORTANTE: Coloca tu Google Maps API Key aquí
+// Para obtener una API key, visita: https://console.cloud.google.com/google/maps-apis/
+const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 
 interface Client {
   id: string;
@@ -49,28 +33,32 @@ interface Zone {
   centerLongitude: number;
 }
 
-// Componente para centrar el mapa automáticamente
-function MapCenterUpdater({ center }: { center: [number, number] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  
-  return null;
-}
+const mapContainerStyle = {
+  width: '100%',
+  height: '600px',
+};
+
+const defaultCenter = {
+  lat: -12.046374, // Lima, Peru
+  lng: -77.042793,
+};
+
+const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ['places'];
 
 export function NetworkMap() {
   const [clients, setClients] = useState<Client[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [showZones, setShowZones] = useState(true);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([-12.046374, -77.042793]); // Lima, Peru
-  const [isMounted, setIsMounted] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries,
+  });
 
   useEffect(() => {
-    // Asegurarse de que el componente esté montado antes de renderizar el mapa
-    setIsMounted(true);
     loadData();
   }, []);
 
@@ -93,11 +81,17 @@ export function NetworkMap() {
       // Si hay clientes, centrar en el primero
       if (clientsWithCoords.length > 0) {
         const firstClient = clientsWithCoords[0];
-        setMapCenter([firstClient.latitude, firstClient.longitude]);
+        setMapCenter({
+          lat: firstClient.latitude,
+          lng: firstClient.longitude,
+        });
       } else if (zonesResponse.zones && zonesResponse.zones.length > 0) {
         const firstZone = zonesResponse.zones[0];
         if (firstZone.centerLatitude && firstZone.centerLongitude) {
-          setMapCenter([firstZone.centerLatitude, firstZone.centerLongitude]);
+          setMapCenter({
+            lat: firstZone.centerLatitude,
+            lng: firstZone.centerLongitude,
+          });
         }
       }
     } catch (error) {
@@ -108,16 +102,17 @@ export function NetworkMap() {
     }
   };
 
-  const getClientIcon = (status: string) => {
+  const getMarkerIcon = (status: string) => {
+    const baseUrl = 'http://maps.google.com/mapfiles/ms/icons/';
     switch (status) {
       case 'active':
-        return activeIcon;
+        return `${baseUrl}green-dot.png`;
       case 'delinquent':
-        return delinquentIcon;
+        return `${baseUrl}red-dot.png`;
       case 'suspended':
-        return suspendedIcon;
+        return `${baseUrl}orange-dot.png`;
       default:
-        return activeIcon;
+        return `${baseUrl}green-dot.png`;
     }
   };
 
@@ -151,7 +146,24 @@ export function NetworkMap() {
 
   const stats = calculateStats();
 
-  if (loading) {
+  if (loadError) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold text-red-700 mb-2">Error al cargar Google Maps</h2>
+          <p className="text-red-600 mb-4">
+            Por favor verifica que tu API Key de Google Maps sea válida.
+          </p>
+          <p className="text-sm text-gray-600">
+            La API Key debe configurarse en: <code className="bg-gray-100 px-2 py-1 rounded">/src/app/components/NetworkMap.tsx</code>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoaded || loading) {
     return (
       <div className="p-8 flex items-center justify-center">
         <div className="text-gray-600">Cargando mapa...</div>
@@ -224,17 +236,19 @@ export function NetworkMap() {
       <Card>
         <CardHeader>
           <CardTitle>Mapa Interactivo</CardTitle>
+          {GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY_HERE' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-2">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Configuración requerida:</strong> Debes agregar tu Google Maps API Key en el archivo{' '}
+                <code className="bg-yellow-100 px-2 py-1 rounded">/src/app/components/NetworkMap.tsx</code>
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg overflow-hidden border border-gray-200" style={{ height: '600px' }}>
-            {!isMounted ? (
-              <div className="flex h-full items-center justify-center bg-gray-100 text-gray-500">
-                <div className="text-center">
-                  <div className="text-gray-600">Cargando mapa...</div>
-                </div>
-              </div>
-            ) : clients.length === 0 ? (
-              <div className="flex h-full items-center justify-center bg-gray-100 text-gray-500">
+          <div className="rounded-lg overflow-hidden border border-gray-200">
+            {clients.length === 0 ? (
+              <div className="flex h-[600px] items-center justify-center bg-gray-100 text-gray-500">
                 <div className="text-center">
                   <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                   <p>No hay clientes con coordenadas GPS registradas</p>
@@ -244,18 +258,17 @@ export function NetworkMap() {
                 </div>
               </div>
             ) : (
-              <MapContainer 
-                center={mapCenter}
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
                 zoom={13}
-                style={{ height: '100%', width: '100%' }}
-                scrollWheelZoom={true}
+                center={mapCenter}
+                options={{
+                  zoomControl: true,
+                  streetViewControl: false,
+                  mapTypeControl: true,
+                  fullscreenControl: true,
+                }}
               >
-                <MapCenterUpdater center={mapCenter} />
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-
                 {/* Zonas */}
                 {showZones &&
                   zones.map((zone) => {
@@ -263,24 +276,19 @@ export function NetworkMap() {
                     return (
                       <Circle
                         key={zone.id}
-                        center={[zone.centerLatitude, zone.centerLongitude]}
-                        radius={1000}
-                        pathOptions={{
-                          color: zone.color,
-                          fillColor: zone.color,
-                          fillOpacity: 0.1,
-                          weight: 2,
+                        center={{
+                          lat: zone.centerLatitude,
+                          lng: zone.centerLongitude,
                         }}
-                      >
-                        <Popup>
-                          <div className="p-2">
-                            <h3 className="font-semibold text-lg">{zone.name}</h3>
-                            {zone.description && (
-                              <p className="text-sm text-gray-600 mt-1">{zone.description}</p>
-                            )}
-                          </div>
-                        </Popup>
-                      </Circle>
+                        radius={1000}
+                        options={{
+                          strokeColor: zone.color,
+                          strokeOpacity: 0.8,
+                          strokeWeight: 2,
+                          fillColor: zone.color,
+                          fillOpacity: 0.15,
+                        }}
+                      />
                     );
                   })}
 
@@ -288,46 +296,62 @@ export function NetworkMap() {
                 {clients.map((client) => (
                   <Marker
                     key={client.id}
-                    position={[client.latitude, client.longitude]}
-                    icon={getClientIcon(client.status)}
-                  >
-                    <Popup>
-                      <div className="p-2 min-w-[200px]">
-                        <h3 className="font-semibold text-lg mb-2">{client.name}</h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Estado:</span>
-                            {getStatusBadge(client.status)}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Conexión:</span>
-                            {getConnectionBadge(client.connectionStatus)}
-                          </div>
-                          <div>
-                            <span className="text-gray-600">Plan:</span>
-                            <p className="font-medium">{client.planName}</p>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">IP:</span>
-                            <p className="font-mono text-xs">{client.ipAddress}</p>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">Barrio:</span>
-                            <p className="font-medium">{client.neighborhood}</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
-                            onClick={() => window.open(`/clients/${client.id}`, '_blank')}
-                          >
-                            Ver Detalles
-                          </Button>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
+                    position={{
+                      lat: client.latitude,
+                      lng: client.longitude,
+                    }}
+                    icon={{
+                      url: getMarkerIcon(client.status),
+                      scaledSize: new window.google.maps.Size(32, 32),
+                    }}
+                    onClick={() => setSelectedClient(client)}
+                  />
                 ))}
-              </MapContainer>
+
+                {/* InfoWindow para el cliente seleccionado */}
+                {selectedClient && (
+                  <InfoWindow
+                    position={{
+                      lat: selectedClient.latitude,
+                      lng: selectedClient.longitude,
+                    }}
+                    onCloseClick={() => setSelectedClient(null)}
+                  >
+                    <div className="p-2 min-w-[200px]">
+                      <h3 className="font-semibold text-lg mb-2">{selectedClient.name}</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Estado:</span>
+                          {getStatusBadge(selectedClient.status)}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Conexión:</span>
+                          {getConnectionBadge(selectedClient.connectionStatus)}
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Plan:</span>
+                          <p className="font-medium">{selectedClient.planName}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">IP:</span>
+                          <p className="font-mono text-xs">{selectedClient.ipAddress}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Barrio:</span>
+                          <p className="font-medium">{selectedClient.neighborhood}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
+                          onClick={() => window.open(`/clients/${selectedClient.id}`, '_blank')}
+                        >
+                          Ver Detalles
+                        </Button>
+                      </div>
+                    </div>
+                  </InfoWindow>
+                )}
+              </GoogleMap>
             )}
           </div>
         </CardContent>

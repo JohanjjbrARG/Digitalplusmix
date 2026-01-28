@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Search, Edit, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { clientsAPI, plansAPI } from '@/lib/api';
@@ -48,6 +48,8 @@ export interface Client {
   monthlyFee: number;
   joinDate: string;
   documentNumber?: string;
+  zoneId?: string;
+  zoneName?: string;
 }
 
 export function Clients() {
@@ -225,6 +227,7 @@ export function Clients() {
               <TableHead className="font-semibold text-gray-900">Dirección IP</TableHead>
               <TableHead className="font-semibold text-gray-900">Nro Poste</TableHead>
               <TableHead className="font-semibold text-gray-900">Barrio</TableHead>
+              <TableHead className="font-semibold text-gray-900">Zona</TableHead>
               <TableHead className="font-semibold text-gray-900">Plan</TableHead>
               <TableHead className="font-semibold text-gray-900">Estado</TableHead>
               <TableHead className="font-semibold text-gray-900 text-right">Acciones</TableHead>
@@ -233,7 +236,7 @@ export function Clients() {
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                   No se encontraron clientes
                 </TableCell>
               </TableRow>
@@ -249,6 +252,13 @@ export function Clients() {
                   <TableCell className="font-mono text-sm">{client.ipAddress}</TableCell>
                   <TableCell>{client.poleNumber}</TableCell>
                   <TableCell>{client.neighborhood}</TableCell>
+                  <TableCell className="text-sm">
+                    {client.zoneName ? (
+                      <Badge variant="outline" className="text-xs">{client.zoneName}</Badge>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>{client.planName}</TableCell>
                   <TableCell>{getStatusBadge(client.status)}</TableCell>
                   <TableCell className="text-right">

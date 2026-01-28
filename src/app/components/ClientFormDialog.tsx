@@ -4,6 +4,7 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { zonesAPI } from '@/lib/api-tickets-zones';
 
 export interface ClientFormData {
   name: string;
@@ -20,6 +21,7 @@ export interface ClientFormData {
   latitude?: number;
   longitude?: number;
   documentNumber?: string;
+  zoneId?: string;
 }
 
 interface ClientFormDialogProps {
@@ -52,8 +54,28 @@ export function ClientFormDialog({
     status: 'active',
     connectionStatus: 'online',
     documentNumber: '',
+    zoneId: '',
     ...initialData,
   });
+
+  const [zones, setZones] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingZones, setLoadingZones] = useState(false);
+
+  useEffect(() => {
+    loadZones();
+  }, []);
+
+  const loadZones = async () => {
+    try {
+      setLoadingZones(true);
+      const response = await zonesAPI.getAll();
+      setZones(response.zones || []);
+    } catch (error) {
+      console.error('Error loading zones:', error);
+    } finally {
+      setLoadingZones(false);
+    }
+  };
 
   useEffect(() => {
     if (initialData) {
@@ -70,6 +92,7 @@ export function ClientFormDialog({
         status: 'active',
         connectionStatus: 'online',
         documentNumber: '',
+        zoneId: '',
         ...initialData,
       });
     }
@@ -156,6 +179,26 @@ export function ClientFormDialog({
                 onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zoneId">Zona</Label>
+              <Select 
+                value={formData.zoneId || 'none'} 
+                onValueChange={(value) => setFormData({ ...formData, zoneId: value === 'none' ? undefined : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingZones ? "Cargando zonas..." : "Seleccionar zona (opcional)"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin zona asignada</SelectItem>
+                  {zones.map((zone) => (
+                    <SelectItem key={zone.id} value={zone.id}>
+                      {zone.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

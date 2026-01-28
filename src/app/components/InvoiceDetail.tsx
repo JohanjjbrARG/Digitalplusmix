@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { Printer, ArrowLeft, DollarSign, Calendar, FileText, CheckCircle, History } from 'lucide-react';
 import { invoicesAPI } from '@/lib/api';
